@@ -247,6 +247,25 @@ export default function MobileFirstChatInbox() {
       if (data.message.conversationId === activeConversationId) {
         setMessages((prev) => {
           if (prev.some((m) => m.id === data.message.id)) return prev;
+          // If this is our own message returning from server, replace optimistic placeholder
+          if (data.message.senderId === currentUser?.id) {
+            const hasTemp = prev.some((m) => m.id.startsWith('msg_temp_') || m.id.startsWith('msg_file_'));
+            if (hasTemp) {
+              let replaced = false;
+              const next = prev.map((m) => {
+                if (
+                  !replaced &&
+                  (m.id.startsWith('msg_temp_') || m.id.startsWith('msg_file_')) &&
+                  (m.content === data.message.content || m.attachment?.name === data.message.attachment?.name)
+                ) {
+                  replaced = true;
+                  return data.message;
+                }
+                return m;
+              });
+              if (replaced) return next;
+            }
+          }
           return [...prev, data.message];
         });
       }
@@ -337,20 +356,39 @@ export default function MobileFirstChatInbox() {
 
   // 5. Send Message Dispatch
   const handleSendMessage = () => {
-    if (!inputText.trim() || !activeConversationId) return;
+    const targetConvId = activeConversationId || conversations[0]?.id;
+    if (!inputText.trim() || !targetConvId) return;
     const textToSend = inputText.trim();
     setInputText('');
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    sendTypingSignal(activeConversationId, false);
+    sendTypingSignal(targetConvId, false);
+
+    const sId = currentUser?.id || 'usr_stu_1';
+    const sRole = currentRole || 'STUDENT';
+    const sName = currentUser?.name || 'User';
 
     const payload = {
-      conversationId: activeConversationId,
-      senderId: currentUser.id,
-      senderRole: currentRole,
-      senderName: currentUser.name,
+      conversationId: targetConvId,
+      senderId: sId,
+      senderRole: sRole,
+      senderName: sName,
       content: textToSend,
     };
+
+    // Optimistically show message immediately in chat
+    const tempMsgId = `msg_temp_${Date.now()}`;
+    const optimisticMsg: ChatMessage = {
+      id: tempMsgId,
+      conversationId: targetConvId,
+      senderId: sId,
+      senderRole: sRole,
+      senderName: sName,
+      content: textToSend,
+      status: 'SENT',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
 
     sendRealtimeMessage(
       payload,
@@ -364,14 +402,18 @@ export default function MobileFirstChatInbox() {
     );
   };
 
-  // 6. Real File Upload Dispatch
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !activeConversationId) return;
+  // 6. Real File & Image Upload Dispatch
+  const processAndUploadFile = async (file: File) => {
+    const targetConvId = activeConversationId || conversations[0]?.id;
+    if (!file || !targetConvId) return;
 
     setIsUploading(true);
     const formData = new FormData();
     formData.append('file', file);
+
+    const sId = currentUser?.id || 'usr_stu_1';
+    const sRole = currentRole || 'STUDENT';
+    const sName = currentUser?.name || 'User';
 
     try {
       const res = await fetch('/api/upload', {
@@ -380,12 +422,13 @@ export default function MobileFirstChatInbox() {
       });
       const data = await res.json();
       if (data.success && data.file) {
+        const isImage = data.file.type?.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(data.file.name);
         const payload = {
-          conversationId: activeConversationId,
-          senderId: currentUser.id,
-          senderRole: currentRole,
-          senderName: currentUser.name,
-          content: `📎 Shared file: ${data.file.name}`,
+          conversationId: targetConvId,
+          senderId: sId,
+          senderRole: sRole,
+          senderName: sName,
+          content: isImage ? `🖼️ Shared image: ${data.file.name}` : `📎 Shared file: ${data.file.name}`,
           attachment: {
             name: data.file.name,
             size: data.file.size,
@@ -393,16 +436,56 @@ export default function MobileFirstChatInbox() {
             url: data.file.url,
           },
         };
+
+        // Optimistically display immediately in thread
+        const tempMsgId = `msg_file_${Date.now()}`;
+        const optimisticMsg: ChatMessage = {
+          id: tempMsgId,
+          conversationId: targetConvId,
+          senderId: sId,
+          senderRole: sRole,
+          senderName: sName,
+          content: payload.content,
+          attachment: payload.attachment,
+          status: 'SENT',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages((prev) => [...prev, optimisticMsg]);
+
         sendRealtimeMessage(payload);
       } else {
-        alert(data.error || 'Upload failed');
+        alert(data.error || 'File upload failed');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('File upload error:', err);
-      alert('Upload failed. Please try again.');
+      alert(err.message || 'File upload failed. Please try again.');
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processAndUploadFile(file);
+    }
+  };
+
+  // Clipboard paste handler for screenshots & images
+  const handleInputPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const items = e.clipboardData?.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            e.preventDefault();
+            processAndUploadFile(file);
+            return;
+          }
+        }
+      }
     }
   };
 
@@ -1045,32 +1128,59 @@ export default function MobileFirstChatInbox() {
 
                       {/* Attachment card if present */}
                       {msg.attachment && (
-                        <div
-                          className={`mt-2 p-2 rounded-xl flex items-center justify-between gap-2 ${
-                            isMe ? 'bg-emerald-700/50 text-white' : 'bg-slate-50 border border-slate-200 text-slate-800'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 truncate">
-                            {msg.attachment.type?.includes('video') ? (
-                              <PlayCircle className="h-4 w-4 text-emerald-400 shrink-0" />
-                            ) : (
-                              <FileText className="h-4 w-4 text-emerald-400 shrink-0" />
-                            )}
-                            <div className="truncate text-[11px]">
-                              <div className="font-bold truncate">{msg.attachment.name}</div>
-                              <div className="text-[9px] opacity-80">{msg.attachment.size}</div>
+                        <div className="mt-2 space-y-1.5">
+                          {(msg.attachment.type?.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(msg.attachment.name)) ? (
+                            <div className="rounded-xl overflow-hidden border border-black/10 bg-black/5 max-w-sm relative group">
+                              <img
+                                src={msg.attachment.url}
+                                alt={msg.attachment.name}
+                                className="w-full max-h-60 object-contain rounded-xl bg-slate-900/5"
+                                loading="lazy"
+                              />
+                              <div className="p-1.5 flex items-center justify-between text-[10px] bg-black/30 backdrop-blur-xs text-white">
+                                <span className="truncate max-w-[150px] font-medium">{msg.attachment.name}</span>
+                                <a
+                                  href={msg.attachment.url}
+                                  download={msg.attachment.name}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex items-center gap-1 bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded text-[10px] font-bold transition-colors"
+                                  title="Download Image"
+                                >
+                                  <Download className="h-3 w-3" />
+                                  <span>{msg.attachment.size}</span>
+                                </a>
+                              </div>
                             </div>
-                          </div>
-                          <a
-                            href={msg.attachment.url}
-                            download={msg.attachment.name}
-                            className={`p-1.5 rounded-lg transition-colors shrink-0 ${
-                              isMe ? 'bg-emerald-800 hover:bg-emerald-900 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
-                            }`}
-                            title="Download file"
-                          >
-                            <Download className="h-3.5 w-3.5" />
-                          </a>
+                          ) : (
+                            <div
+                              className={`p-2 rounded-xl flex items-center justify-between gap-2 ${
+                                isMe ? 'bg-emerald-700/50 text-white' : 'bg-slate-50 border border-slate-200 text-slate-800'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                {msg.attachment.type?.includes('video') ? (
+                                  <PlayCircle className="h-4 w-4 text-emerald-400 shrink-0" />
+                                ) : (
+                                  <FileText className="h-4 w-4 text-emerald-400 shrink-0" />
+                                )}
+                                <div className="truncate text-[11px]">
+                                  <div className="font-bold truncate">{msg.attachment.name}</div>
+                                  <div className="text-[9px] opacity-80">{msg.attachment.size}</div>
+                                </div>
+                              </div>
+                              <a
+                                href={msg.attachment.url}
+                                download={msg.attachment.name}
+                                className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                                  isMe ? 'bg-emerald-800 hover:bg-emerald-900 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
+                                }`}
+                                title="Download file"
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                              </a>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -1158,6 +1268,7 @@ export default function MobileFirstChatInbox() {
               <input
                 ref={fileInputRef}
                 type="file"
+                accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,video/*"
                 className="hidden"
                 onChange={handleFileUpload}
               />
@@ -1180,9 +1291,10 @@ export default function MobileFirstChatInbox() {
               {/* Text Input */}
               <input
                 type="text"
-                placeholder="Type a message..."
+                placeholder="Type a message or paste screenshot..."
                 value={inputText}
                 onChange={handleInputChange}
+                onPaste={handleInputPaste}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();

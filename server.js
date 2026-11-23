@@ -105,6 +105,50 @@ function scanMessage(content) {
 app.prepare().then(() => {
   const server = createServer((req, res) => {
     const parsedUrl = parse(req.url, true);
+    const { pathname } = parsedUrl;
+
+    // Directly serve dynamic uploads from disk so newly uploaded files/images never 404
+    if (pathname && pathname.startsWith('/uploads/')) {
+      const sanitizedSubPath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
+      const filePath = path.join(__dirname, 'public', sanitizedSubPath);
+      if (fs.existsSync(filePath)) {
+        try {
+          const stat = fs.statSync(filePath);
+          if (stat.isFile()) {
+            const ext = path.extname(filePath).toLowerCase();
+            const mimeTypes = {
+              '.jpg': 'image/jpeg',
+              '.jpeg': 'image/jpeg',
+              '.png': 'image/png',
+              '.gif': 'image/gif',
+              '.webp': 'image/webp',
+              '.svg': 'image/svg+xml',
+              '.pdf': 'application/pdf',
+              '.doc': 'application/msword',
+              '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+              '.xls': 'application/vnd.ms-excel',
+              '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              '.txt': 'text/plain',
+              '.mp4': 'video/mp4',
+              '.webm': 'video/webm',
+              '.zip': 'application/zip',
+            };
+            const contentType = mimeTypes[ext] || 'application/octet-stream';
+            res.writeHead(200, {
+              'Content-Type': contentType,
+              'Content-Length': stat.size,
+              'Cache-Control': 'public, max-age=86400',
+            });
+            const stream = fs.createReadStream(filePath);
+            stream.pipe(res);
+            return;
+          }
+        } catch (e) {
+          console.error('Error serving upload stream:', e);
+        }
+      }
+    }
+
     handle(req, res, parsedUrl);
   });
 

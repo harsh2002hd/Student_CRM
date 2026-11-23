@@ -332,7 +332,7 @@ export default function Navbar() {
             <div className="hidden sm:flex items-center gap-1 bg-slate-100 rounded-xl px-2 py-1 text-xs">
               <Globe className="h-3.5 w-3.5 text-slate-500" />
               <select
-                value={currentUser.currency || 'USD'}
+                value={currentUser?.currency || 'USD'}
                 onChange={handleCurrencyChange}
                 className="bg-transparent text-xs font-bold text-slate-800 border-none focus:outline-hidden cursor-pointer"
               >
@@ -358,8 +358,8 @@ export default function Navbar() {
             <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
               <div className="relative">
                 <img
-                  src={currentUser.avatar}
-                  alt={currentUser.name}
+                  src={currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+                  alt={currentUser?.name || 'User'}
                   className="h-9 w-9 rounded-full object-cover ring-2 ring-slate-100"
                 />
                 <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
@@ -367,16 +367,16 @@ export default function Navbar() {
               <div className="hidden lg:flex flex-col text-left">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-bold text-slate-800 leading-tight">
-                    {currentUser.name}
+                    {currentUser?.name || 'User'}
                   </span>
                   {expertProfile?.approvalStatus === 'APPROVED' && (
                     <CheckCircle2 className="h-3 w-3 text-emerald-600" />
                   )}
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-slate-500 font-mono">
-                  <span>{currentUser.maskedId}</span>
+                  <span>{currentUser?.maskedId || 'USR-0000'}</span>
                   <span>•</span>
-                  <span className="capitalize">{currentUser.role.toLowerCase()}</span>
+                  <span className="capitalize">{currentUser?.role ? currentUser.role.toLowerCase() : 'student'}</span>
                 </div>
               </div>
             </div>

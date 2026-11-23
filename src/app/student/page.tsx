@@ -36,6 +36,7 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
+    if (!currentUser?.id) return;
     try {
       const [resOrd, resQry] = await Promise.all([
         fetch(`/api/orders?studentId=${currentUser.id}`),

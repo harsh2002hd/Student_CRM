@@ -29,7 +29,7 @@ export default function ExpertDashboard() {
   const [openQueriesCount, setOpenQueriesCount] = useState(0);
 
   const loadExpertData = () => {
-    if (!isPendingApproval) {
+    if (!isPendingApproval && currentUser?.id) {
       fetch(`/api/orders?expertId=${currentUser.id}`)
         .then((res) => res.json())
         .then((data) => {

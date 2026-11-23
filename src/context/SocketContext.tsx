@@ -205,12 +205,12 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   };
 
   const sendTypingSignal = (conversationId: string, isTyping: boolean) => {
-    if (socket && currentUser) {
+    if (socket && currentUser?.id) {
       if (isTyping) {
         socket.emit('typing_start', {
           conversationId,
           userId: currentUser.id,
-          userName: currentUser.name.split(' ')[0],
+          userName: (currentUser.name || 'User').split(' ')[0],
         });
       } else {
         socket.emit('typing_stop', {
@@ -242,8 +242,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         status: 'RINGING',
       });
       socket.emit('call_initiate', {
-        callerId: currentUser.id,
-        callerName: currentUser.name,
+        callerId: currentUser?.id,
+        callerName: currentUser?.name || 'User',
         targetUserId,
         sessionToken,
         callType: 'AUDIO',
@@ -252,7 +252,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   };
 
   const acceptIncomingCall = () => {
-    if (socket && incomingCall && currentUser) {
+    if (socket && incomingCall && currentUser?.id) {
       setActiveLiveCall({
         partnerId: incomingCall.callerId,
         sessionToken: incomingCall.sessionToken,
@@ -268,7 +268,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   };
 
   const rejectIncomingCall = () => {
-    if (socket && incomingCall && currentUser) {
+    if (socket && incomingCall && currentUser?.id) {
       socket.emit('call_reject', {
         callerId: incomingCall.callerId,
         targetUserId: currentUser.id,

@@ -582,9 +582,9 @@
         "Expert Applicant",
         "Pending Verification"
       ],
-      "lastMessage": "Applying as an Astrophysics & Computational Physics Expert Mentor.",
-      "lastMessageTime": "Just now",
-      "unreadCountStudent": 0,
+      "lastMessage": "📎 Shared file: ADT103_SA1_SHAHAHD_H00628850.pptx (1).docx",
+      "lastMessageTime": "01:44 pm",
+      "unreadCountStudent": 2,
       "unreadCountExpert": 0,
       "unreadCountAdmin": 1,
       "hasMedia": false
@@ -692,10 +692,10 @@
         "VIP Lead",
         "Python"
       ],
-      "lastMessage": "📎 Shared file: 03-gamestate-saves-v2-review.pdf",
-      "lastMessageTime": "12:10 pm",
+      "lastMessage": "Hey expert, why pay platform fees? Call me directly on [REDACTED PHONE NUMBER - PRIVACY POLICY] or ping my [REDACTED EXTERNAL LINK/HANDLE]",
+      "lastMessageTime": "Just now",
       "unreadCountStudent": 0,
-      "unreadCountExpert": 2,
+      "unreadCountExpert": 4,
       "hasMedia": true,
       "mediaType": "file"
     },
@@ -1058,7 +1058,7 @@
       "timestamp": "11:43 am"
     },
     {
-      "id": "msg_1795416000767",
+      "id": "msg_1795418174545",
       "conversationId": "conv_1",
       "senderId": "usr_stu_1",
       "senderRole": "STUDENT",
@@ -1066,27 +1066,101 @@
       "content": "hii",
       "isFlagged": false,
       "status": "SENT",
-      "timestamp": "12:10 pm"
+      "timestamp": "12:46 pm"
     },
     {
-      "id": "msg_1795416028142",
+      "id": "msg_1795418189065",
       "conversationId": "conv_1",
       "senderId": "usr_stu_1",
       "senderRole": "STUDENT",
       "senderName": "Alex Chen",
-      "content": "📎 Shared file: 03-gamestate-saves-v2-review.pdf",
+      "content": "📎 Shared file: debug_info (12).json",
       "isFlagged": false,
       "attachment": {
-        "name": "03-gamestate-saves-v2-review.pdf",
-        "size": "2.1 MB",
-        "type": "application/pdf",
-        "url": "/uploads/1795416027690-03-gamestate-saves-v2-review.pdf"
+        "name": "debug_info (12).json",
+        "size": "1.1 MB",
+        "type": "application/json",
+        "url": "/uploads/1795418189032-debug_info__12_.json"
       },
       "status": "SENT",
-      "timestamp": "12:10 pm"
+      "timestamp": "12:46 pm"
+    },
+    {
+      "id": "msg_1795419284488",
+      "conversationId": "conv_1",
+      "senderId": "usr_stu_1",
+      "senderRole": "STUDENT",
+      "senderName": "Alex Chen",
+      "content": "📎 Shared file: test_notes.txt",
+      "isFlagged": false,
+      "attachment": {
+        "name": "test_notes.txt",
+        "size": "0 KB",
+        "type": "text/plain",
+        "url": "/uploads/1795419283607-test_notes.txt"
+      },
+      "status": "SENT",
+      "timestamp": "01:04 pm"
+    },
+    {
+      "id": "msg_1795419284907",
+      "conversationId": "conv_1",
+      "senderId": "usr_stu_1",
+      "senderRole": "STUDENT",
+      "senderName": "Alex Chen",
+      "content": "Hey expert, why pay platform fees? Call me directly on [REDACTED PHONE NUMBER - PRIVACY POLICY] or ping my [REDACTED EXTERNAL LINK/HANDLE]",
+      "originalContent": "Hey expert, why pay platform fees? Call me directly on +1 (415) 882-9901 or ping my WhatsApp wa.me/14158829901",
+      "isFlagged": true,
+      "flagReason": "External messenger handle or social link detected, Mobile number or phone sequence detected",
+      "status": "SENT",
+      "timestamp": "01:04 pm"
+    },
+    {
+      "id": "msg_1795421632723",
+      "conversationId": "conv_usr_1795377474693_jei1_admin",
+      "senderId": "usr_admin",
+      "senderRole": "ADMIN",
+      "senderName": "Platform Operations Admin",
+      "content": "hii",
+      "isFlagged": false,
+      "status": "SENT",
+      "timestamp": "01:43 pm"
+    },
+    {
+      "id": "msg_1795421646396",
+      "conversationId": "conv_usr_1795377474693_jei1_admin",
+      "senderId": "usr_admin",
+      "senderRole": "ADMIN",
+      "senderName": "Platform Operations Admin",
+      "content": "📎 Shared file: ADT103_SA1_SHAHAHD_H00628850.pptx (1).docx",
+      "isFlagged": false,
+      "attachment": {
+        "name": "ADT103_SA1_SHAHAHD_H00628850.pptx (1).docx",
+        "size": "4.0 MB",
+        "type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "url": "/uploads/1795421646041-ADT103_SA1_SHAHAHD_H00628850.pptx__1_.docx"
+      },
+      "status": "SENT",
+      "timestamp": "01:44 pm"
     }
   ],
   "flaggedMessages": [
+    {
+      "id": "flg_1795419284908",
+      "messageId": "msg_1795419284907",
+      "conversationId": "conv_1",
+      "senderId": "usr_stu_1",
+      "senderRole": "STUDENT",
+      "senderName": "Alex Chen",
+      "attemptedLeakType": [
+        "EXTERNAL_HANDLE",
+        "PHONE"
+      ],
+      "flaggedText": "Hey expert, why pay platform fees? Call me directly on +1 (415) 882-9901 or ping my WhatsApp wa.me/14158829901",
+      "redactedText": "Hey expert, why pay platform fees? Call me directly on [REDACTED PHONE NUMBER - PRIVACY POLICY] or ping my [REDACTED EXTERNAL LINK/HANDLE]",
+      "timestamp": "2026-11-23T07:34:44.908Z",
+      "status": "PENDING_REVIEW"
+    },
     {
       "id": "flg_1795414291710",
       "messageId": "msg_1795414291709",

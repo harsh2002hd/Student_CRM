@@ -23,8 +23,13 @@ import {
 
 export default function HomePage() {
   const router = useRouter();
-  const { currentUser, currentRole, switchUser } = useAuth();
+  const { currentUser, currentRole, switchUser, allUsers } = useAuth();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
@@ -53,7 +58,7 @@ export default function HomePage() {
               href={currentRole === 'ADMIN' ? '/admin' : currentRole === 'EXPERT' ? '/expert' : '/student'}
               className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-500/25 hover:from-brand-700 hover:to-indigo-700 transition-all active:scale-95"
             >
-              <span>Launch {currentRole} Workspace</span>
+              <span>Launch {mounted ? currentRole : 'Platform'} Workspace</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
 
@@ -113,14 +118,14 @@ export default function HomePage() {
             <div className="mt-8 flex flex-col gap-2">
               <button
                 onClick={() => {
-                  const targetStudent = currentUser.role === 'STUDENT' ? currentUser : allUsers.find((u) => u.role === 'STUDENT');
+                  const targetStudent = currentUser?.role === 'STUDENT' ? currentUser : allUsers?.find((u) => u.role === 'STUDENT');
                   if (targetStudent) switchUser(targetStudent.id);
                   router.push('/student');
                 }}
                 className="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-xs font-bold text-white hover:bg-slate-800 transition-colors shadow-xs"
               >
                 <span>
-                  Enter as Student ({currentUser.role === 'STUDENT' ? currentUser.name : (allUsers.find((u) => u.role === 'STUDENT')?.name || 'Student Portal')}) →
+                  Enter as Student ({mounted ? (currentUser?.role === 'STUDENT' ? currentUser?.name : (allUsers?.find((u) => u.role === 'STUDENT')?.name || 'Student Portal')) : 'Student Portal'}) →
                 </span>
               </button>
               <button
