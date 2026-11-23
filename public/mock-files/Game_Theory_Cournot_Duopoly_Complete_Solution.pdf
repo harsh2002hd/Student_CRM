@@ -1,0 +1,4 @@
+Game Theory & Cournot Duopoly Equilibrium
+Firm 1 Profit: Pi_1 = (P - c1) * q1
+Reaction Function 1: R1(q2) = (a - c1 - b*q2) / (2*b)
+Equilibrium outputs and Nash profits verified.
