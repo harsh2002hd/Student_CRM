@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem('demo_current_user_id');
-      if (saved && INITIAL_USERS.some(u => u.id === saved)) {
+      if (saved) {
         setCurrentUserId(saved);
       }
     } catch {
@@ -58,17 +58,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   };
 
-  const currentUser = allUsers.find((u) => u.id === currentUserId) || allUsers[0];
-  const currentRole = currentUser.role;
+  const currentUser: User =
+    (allUsers && allUsers.length > 0
+      ? allUsers.find((u) => u.id === currentUserId) || allUsers[0]
+      : null) ||
+    INITIAL_USERS.find((u) => u.id === currentUserId) ||
+    INITIAL_USERS[0];
+  const currentRole: UserRole = currentUser?.role || 'STUDENT';
 
   const expertProfile =
     currentRole === 'EXPERT'
-      ? expertProfiles.find((p) => p.userId === currentUser.id) || null
+      ? expertProfiles.find((p) => p.userId === currentUser?.id) || null
       : null;
 
   const studentProfile =
     currentRole === 'STUDENT'
-      ? studentProfiles.find((p) => p.userId === currentUser.id) || null
+      ? studentProfiles.find((p) => p.userId === currentUser?.id) || null
       : null;
 
   const isPendingApproval = expertProfile?.approvalStatus === 'PENDING';

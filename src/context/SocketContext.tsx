@@ -151,9 +151,56 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser, socket, isConnected]);
 
-  const sendRealtimeMessage = (payload: any) => {
-    if (socket) {
+  const sendRealtimeMessage = (
+    first: any,
+    contentArg?: string,
+    onScanResult?: (scan: any) => void,
+    attachmentArg?: any
+  ) => {
+    let payload: any;
+    if (typeof first === 'object' && first !== null && first.conversationId) {
+      payload = {
+        ...first,
+        senderId: first.senderId || currentUser?.id,
+        senderRole: first.senderRole || currentUser?.role,
+        senderName: first.senderName || currentUser?.name,
+      };
+    } else {
+      payload = {
+        conversationId: first,
+        content: contentArg || '',
+        senderId: currentUser?.id,
+        senderRole: currentUser?.role,
+        senderName: currentUser?.name,
+        attachment: attachmentArg,
+      };
+    }
+
+    if (!payload.conversationId || !payload.senderId) {
+      console.warn('Cannot send message: missing conversationId or senderId', payload);
+      return;
+    }
+
+    // Always emit through Socket.io if connected
+    if (socket && isConnected) {
+      socket.emit('join_conversation', { conversationId: payload.conversationId });
       socket.emit('send_message', payload);
+    } else {
+      // Fallback via HTTP POST
+      fetch('/api/chat/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.scanResult && onScanResult) {
+            onScanResult(data.scanResult);
+          }
+        })
+        .catch((err) => {
+          console.error('HTTP send fallback error:', err);
+        });
     }
   };
 

@@ -22,11 +22,11 @@ export interface SecurityScanResult {
 // Regex definitions
 const PHONE_REGEXES = [
   // 10-digit standard Indian mobile formats with optional +91/0 and optional spaces/dashes/dots
-  /(?:\+?91[\s.-]?)?[6-9]\d{4}[\s.-]?\d{5}\b/gi,
-  /(?:\+?91[\s.-]?)?[6-9]\d{2}[\s.-]?\d{3}[\s.-]?\d{4}\b/gi,
+  /(?:\+\s*)?(?:91[\s.-]?)?[6-9]\d{4}[\s.-]?\d{5}\b/gi,
+  /(?:\+\s*)?(?:91[\s.-]?)?[6-9]\d{2}[\s.-]?\d{3}[\s.-]?\d{4}\b/gi,
   /\b[6-9]\d{9}\b/g,
-  // Generic phone numbers with brackets and hyphens: (123) 456-7890 or 123-456-7890
-  /\b(?:\+?\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g,
+  // Generic phone numbers with brackets and hyphens: (123) 456-7890 or 123-456-7890 or +1 (415) 882-9901
+  /(?:\+\s*)?(?:\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g,
   // Obfuscated spaced single digits: e.g. "9 8 7 6 5 4 3 2 1 0"
   /\b(?:[6-9][\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d)\b/g,
   // Spelled out number sequences: "call 987...", "call nine eight..."
@@ -41,14 +41,14 @@ const EMAIL_REGEXES = [
 ];
 
 const EXTERNAL_HANDLE_REGEXES = [
-  // WhatsApp links / keywords
-  /(?:wa\.me\/\S*|whatsapp(?:\.com)?|whatsapp\s*me|ping\s*me\s*on\s*whatsapp)/gi,
+  // WhatsApp links / keywords (including full URL and phone parameter)
+  /(?:https?:\/\/)?(?:wa\.me\/\S*|whatsapp(?:\.com\/\S*)?|whatsapp\s*(?:me|number)?)/gi,
   // Telegram links / keywords
-  /(?:t\.me\/\S*|telegram(?:\.org)?|ping\s*on\s*telegram|tele\s*id)/gi,
+  /(?:https?:\/\/)?(?:t\.me\/\S*|telegram(?:\.org\/\S*)?|ping\s*on\s*telegram|tele\s*id)/gi,
   // Instagram
-  /(?:instagram\.com\/\S*|insta\s*id|ig\s*handle|ig\s*:\s*@?\w+)/gi,
+  /(?:https?:\/\/)?(?:instagram\.com\/\S*|insta\s*id|ig\s*handle|ig\s*:\s*@?\w+)/gi,
   // Discord / Skype / Snapchat
-  /(?:discord\.gg\/\S*|discord(?:\.com)?|skype\s*id|snapchat|snap\s*id)/gi,
+  /(?:https?:\/\/)?(?:discord\.gg\/\S*|discord(?:\.com\/\S*)?|skype\s*id|snapchat|snap\s*id)/gi,
   // Direct @ handle solicitation e.g. "DM me @username" or "hit me on @..."
   /(?:dm|text|message|ping|contact|call|reach)\s*(?:me\s*)?(?:at|on)?\s*@[a-zA-Z0-9._]{3,30}\b/gi,
 ];
@@ -61,18 +61,18 @@ export function scanAndSanitizeMessage(content: string): SecurityScanResult {
   const detectedTypes: ('PHONE' | 'EMAIL' | 'EXTERNAL_HANDLE')[] = [];
   const flagReasons: string[] = [];
 
-  // 1. Check for Phone numbers
-  for (const regex of PHONE_REGEXES) {
+  // 1. Check for External Handles and Links FIRST (prevents URLs with digits from premature phone matching)
+  for (const regex of EXTERNAL_HANDLE_REGEXES) {
     regex.lastIndex = 0;
     if (regex.test(sanitized)) {
-      if (!detectedTypes.includes('PHONE')) detectedTypes.push('PHONE');
-      flagReasons.push('Mobile number or phone sequence detected');
+      if (!detectedTypes.includes('EXTERNAL_HANDLE')) detectedTypes.push('EXTERNAL_HANDLE');
+      flagReasons.push('External messenger handle or social link detected');
       regex.lastIndex = 0;
-      sanitized = sanitized.replace(regex, '[REDACTED PHONE NUMBER - PRIVACY POLICY]');
+      sanitized = sanitized.replace(regex, '[REDACTED EXTERNAL LINK/HANDLE]');
     }
   }
 
-  // 2. Check for Emails
+  // 2. Check for Emails SECOND
   for (const regex of EMAIL_REGEXES) {
     regex.lastIndex = 0;
     if (regex.test(sanitized)) {
@@ -83,16 +83,22 @@ export function scanAndSanitizeMessage(content: string): SecurityScanResult {
     }
   }
 
-  // 3. Check for External Handles and Links
-  for (const regex of EXTERNAL_HANDLE_REGEXES) {
+  // 3. Check for Phone numbers THIRD
+  for (const regex of PHONE_REGEXES) {
     regex.lastIndex = 0;
     if (regex.test(sanitized)) {
-      if (!detectedTypes.includes('EXTERNAL_HANDLE')) detectedTypes.push('EXTERNAL_HANDLE');
-      flagReasons.push('External messenger handle or social link detected');
+      if (!detectedTypes.includes('PHONE')) detectedTypes.push('PHONE');
+      flagReasons.push('Mobile number or phone sequence detected');
       regex.lastIndex = 0;
-      sanitized = sanitized.replace(regex, '[REDACTED EXTERNAL LINK/HANDLE]');
+      sanitized = sanitized.replace(regex, '[REDACTED PHONE NUMBER - PRIVACY POLICY]');
     }
   }
+
+  // Deduplicate consecutive identical redactions cleanly
+  sanitized = sanitized.replace(/(?:\[REDACTED EXTERNAL LINK\/HANDLE\][\s,]*)+/g, '[REDACTED EXTERNAL LINK/HANDLE] ');
+  sanitized = sanitized.replace(/(?:\[REDACTED PHONE NUMBER - PRIVACY POLICY\][\s,]*)+/g, '[REDACTED PHONE NUMBER - PRIVACY POLICY] ');
+  sanitized = sanitized.replace(/(?:\[REDACTED EMAIL ADDRESS - PRIVACY POLICY\][\s,]*)+/g, '[REDACTED EMAIL ADDRESS - PRIVACY POLICY] ');
+  sanitized = sanitized.trim();
 
   const isViolating = detectedTypes.length > 0;
   

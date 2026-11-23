@@ -101,14 +101,14 @@ export default function ExpertDashboard() {
         <div className="rounded-3xl bg-white p-6 sm:p-8 border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-start gap-4">
             <img
-              src={currentUser.avatar}
-              alt={currentUser.name}
+              src={currentUser?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80'}
+              alt={currentUser?.name || 'Expert'}
               className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl object-cover ring-4 ring-slate-100 shadow-sm"
             />
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-                  {currentUser.name}
+                  {currentUser?.name || 'Academic Mentor'}
                 </h1>
                 {expertProfile?.approvalStatus === 'APPROVED' ? (
                   <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
@@ -128,7 +128,7 @@ export default function ExpertDashboard() {
 
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                 <span className="font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
-                  {currentUser.maskedId}
+                  {currentUser?.maskedId}
                 </span>
                 <span>•</span>
                 <span>{expertProfile?.qualifications}</span>

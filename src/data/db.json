@@ -625,10 +625,10 @@
         "New Lead",
         "Direct Register"
       ],
-      "lastMessage": "Hi M1 Support, I am David Miller. Need urgent assistance with my algorithms problem set!",
+      "lastMessage": "⚠️ Safety Warning Issued to David Miller (STU-2744)",
       "lastMessageTime": "Just now",
-      "unreadCountStudent": 0,
-      "unreadCountExpert": 1,
+      "unreadCountStudent": 1,
+      "unreadCountExpert": 3,
       "hasMedia": false
     },
     {
@@ -692,10 +692,10 @@
         "VIP Lead",
         "Python"
       ],
-      "lastMessage": "I've uploaded the regularized loss derivation draft. Check section 2.",
-      "lastMessageTime": "10:45 AM",
+      "lastMessage": "📎 Shared file: 03-gamestate-saves-v2-review.pdf",
+      "lastMessageTime": "12:10 pm",
       "unreadCountStudent": 0,
-      "unreadCountExpert": 0,
+      "unreadCountExpert": 2,
       "hasMedia": true,
       "mediaType": "file"
     },
@@ -1022,9 +1022,87 @@
       "isFlagged": false,
       "status": "DELIVERED",
       "timestamp": "01:27 am"
+    },
+    {
+      "id": "msg_1795414234336",
+      "conversationId": "conv_usr_1795377390368_v8os_direct",
+      "senderId": "usr_1795377390368_v8os",
+      "senderRole": "STUDENT",
+      "senderName": "David Miller (STU-2744)",
+      "content": "Hello, can you help me solve this dynamic programming problem?",
+      "isFlagged": false,
+      "status": "SENT",
+      "timestamp": "11:40 am"
+    },
+    {
+      "id": "msg_1795414291709",
+      "conversationId": "conv_usr_1795377390368_v8os_direct",
+      "senderId": "usr_1795377390368_v8os",
+      "senderRole": "STUDENT",
+      "senderName": "David Miller (STU-2744)",
+      "content": "Call me on [REDACTED PHONE NUMBER - PRIVACY POLICY] or ping [REDACTED EXTERNAL LINK/HANDLE]",
+      "originalContent": "Call me on +1 (415) 882-9901 or ping wa.me/14158829901",
+      "isFlagged": true,
+      "flagReason": "External messenger handle or social link detected, Mobile number or phone sequence detected",
+      "status": "SENT",
+      "timestamp": "11:41 am"
+    },
+    {
+      "id": "msg_warn_1795414409884",
+      "conversationId": "conv_usr_1795377390368_v8os_direct",
+      "senderId": "m1_security_system",
+      "senderRole": "ADMIN",
+      "senderName": "M1 Security Enforcement",
+      "content": "⚠️ [OFFICIAL SAFETY WARNING] Our Zero Contact Leakage monitor intercepted an off-platform contact exchange attempt. Sharing mobile numbers, emails, or personal messaging handles (WhatsApp/Telegram/Instagram) violates M1 Company Platform Policy. All orders, communication, and payments must remain within M1 Company to preserve platform escrow guarantees and account safety.",
+      "status": "SENT",
+      "timestamp": "11:43 am"
+    },
+    {
+      "id": "msg_1795416000767",
+      "conversationId": "conv_1",
+      "senderId": "usr_stu_1",
+      "senderRole": "STUDENT",
+      "senderName": "Alex Chen",
+      "content": "hii",
+      "isFlagged": false,
+      "status": "SENT",
+      "timestamp": "12:10 pm"
+    },
+    {
+      "id": "msg_1795416028142",
+      "conversationId": "conv_1",
+      "senderId": "usr_stu_1",
+      "senderRole": "STUDENT",
+      "senderName": "Alex Chen",
+      "content": "📎 Shared file: 03-gamestate-saves-v2-review.pdf",
+      "isFlagged": false,
+      "attachment": {
+        "name": "03-gamestate-saves-v2-review.pdf",
+        "size": "2.1 MB",
+        "type": "application/pdf",
+        "url": "/uploads/1795416027690-03-gamestate-saves-v2-review.pdf"
+      },
+      "status": "SENT",
+      "timestamp": "12:10 pm"
     }
   ],
   "flaggedMessages": [
+    {
+      "id": "flg_1795414291710",
+      "messageId": "msg_1795414291709",
+      "conversationId": "conv_usr_1795377390368_v8os_direct",
+      "senderId": "usr_1795377390368_v8os",
+      "senderRole": "STUDENT",
+      "senderName": "David Miller (STU-2744)",
+      "attemptedLeakType": [
+        "EXTERNAL_HANDLE",
+        "PHONE"
+      ],
+      "flaggedText": "Call me on +1 (415) 882-9901 or ping wa.me/14158829901",
+      "redactedText": "Call me on [REDACTED PHONE NUMBER - PRIVACY POLICY] or ping [REDACTED EXTERNAL LINK/HANDLE]",
+      "timestamp": "2026-11-23T06:11:31.710Z",
+      "status": "WARNING_ISSUED"
+    },
     {
       "id": "flg_1",
       "messageId": "msg_flagged_demo",

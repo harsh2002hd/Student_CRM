@@ -37,6 +37,11 @@ export default function AdminChatOversightPage() {
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'PENDING' | 'WARNED' | 'DISMISSED'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Warning Modal State
   const [warningModalTarget, setWarningModalTarget] = useState<FlaggedMessageRecord | null>(null);
@@ -51,7 +56,9 @@ export default function AdminChatOversightPage() {
   );
   const [isSimulating, setIsSimulating] = useState(false);
 
-  const studentUsers = allUsers.filter((u) => u.role === 'STUDENT');
+  const studentUsers = React.useMemo(() => {
+    return (allUsers || []).filter((u) => u && u.role === 'STUDENT');
+  }, [allUsers]);
 
   const loadFlagged = async () => {
     try {
@@ -267,6 +274,17 @@ export default function AdminChatOversightPage() {
   const pendingCount = flaggedMessages.filter((f) => f.status === 'PENDING_REVIEW').length;
   const warnedCount = flaggedMessages.filter((f) => f.status === 'WARNING_ISSUED').length;
   const dismissedCount = flaggedMessages.filter((f) => f.status === 'DISMISSED').length;
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-slate-50/70 flex items-center justify-center">
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+          <RefreshCw className="h-4 w-4 animate-spin text-rose-500" />
+          <span>Loading Anti-Bypass Oversight...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/70 py-8 px-4 sm:px-6 lg:px-8">

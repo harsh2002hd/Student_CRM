@@ -33,6 +33,11 @@ export default function Navbar() {
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleResetDb = async () => {
     if (confirm('Reset platform data to initial state?')) {
@@ -73,9 +78,9 @@ export default function Navbar() {
 
           <div className="flex flex-wrap items-center gap-1.5">
             {/* Quick actor pills */}
-            {(() => {
-              const list = [...allUsers];
-              if (!list.slice(0, 5).some((u) => u.id === currentUser.id)) {
+            {mounted && (() => {
+              const list = [...(allUsers || [])];
+              if (currentUser?.id && !list.slice(0, 5).some((u) => u.id === currentUser.id)) {
                 const idx = list.findIndex((u) => u.id === currentUser.id);
                 if (idx > -1) {
                   const [curr] = list.splice(idx, 1);
@@ -83,7 +88,7 @@ export default function Navbar() {
                 }
               }
               return list.slice(0, 6).map((user) => {
-                const isSelected = user.id === currentUser.id;
+                const isSelected = user.id === currentUser?.id;
                 let roleBadge = 'bg-blue-900/60 text-blue-300 border-blue-700/50';
                 let emoji = '👨‍🎓';
                 if (user.role === 'ADMIN') {
@@ -112,7 +117,7 @@ export default function Navbar() {
                     }`}
                   >
                     <span>{emoji}</span>
-                    <span>{user.name.split(' ')[0]}</span>
+                    <span>{(user.name || 'User').split(' ')[0]}</span>
                     <span className={`text-[10px] px-1 rounded uppercase tracking-wider ${roleBadge}`}>
                       {user.id === 'usr_exp_pending' ? 'Pending' : user.role}
                     </span>

@@ -35,42 +35,32 @@ function saveDbData(data) {
 }
 
 // Security scanner for sockets
-const PHONE_REGEXES = [
-  /(?:\+?91[\s.-]?)?[6-9]\d{4}[\s.-]?\d{5}\b/gi,
-  /(?:\+?91[\s.-]?)?[6-9]\d{2}[\s.-]?\d{3}[\s.-]?\d{4}\b/gi,
-  /\b[6-9]\d{9}\b/g,
-  /\b(?:\+?\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g,
-  /\b(?:[6-9][\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d)\b/g,
+const HANDLE_REGEXES = [
+  /(?:https?:\/\/)?(?:wa\.me\/\S*|whatsapp(?:\.com\/\S*)?|whatsapp\s*(?:me|number)?)/gi,
+  /(?:https?:\/\/)?(?:t\.me\/\S*|telegram(?:\.org\/\S*)?|ping\s*on\s*telegram|tele\s*id)/gi,
+  /(?:https?:\/\/)?(?:instagram\.com\/\S*|insta\s*id|ig\s*handle|ig\s*:\s*@?\w+)/gi,
+  /(?:https?:\/\/)?(?:discord\.gg\/\S*|discord(?:\.com\/\S*)?|skype\s*id|snapchat|snap\s*id)/gi,
+  /(?:dm|text|message|ping|contact|call|reach)\s*(?:me\s*)?(?:at|on)?\s*@[a-zA-Z0-9._]{3,30}\b/gi,
 ];
+
 const EMAIL_REGEXES = [
   /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/gi,
   /\b[A-Za-z0-9._%+-]+\s*(?:\[at\]|\(at\)|\sat\s|@)\s*[A-Za-z0-9.-]+\s*(?:\[dot\]|\(dot\)|\sdot\s|\.)\s*(?:com|org|net|in|co|edu|io)\b/gi,
 ];
-const HANDLE_REGEXES = [
-  /(?:wa\.me\/\S*|whatsapp(?:\.com)?|whatsapp\s*me)/gi,
-  /(?:t\.me\/\S*|telegram(?:\.org)?|ping\s*on\s*telegram)/gi,
-  /(?:instagram\.com\/\S*|insta\s*id|ig\s*handle)/gi,
+
+const PHONE_REGEXES = [
+  /(?:\+\s*)?(?:91[\s.-]?)?[6-9]\d{4}[\s.-]?\d{5}\b/gi,
+  /(?:\+\s*)?(?:91[\s.-]?)?[6-9]\d{2}[\s.-]?\d{3}[\s.-]?\d{4}\b/gi,
+  /\b[6-9]\d{9}\b/g,
+  /(?:\+\s*)?(?:\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g,
+  /\b(?:[6-9][\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d[\s_.-]*\d)\b/g,
 ];
 
 function scanMessage(content) {
   let sanitized = content;
   const detectedTypes = [];
-  for (const r of PHONE_REGEXES) {
-    r.lastIndex = 0;
-    if (r.test(sanitized)) {
-      if (!detectedTypes.includes('PHONE')) detectedTypes.push('PHONE');
-      r.lastIndex = 0;
-      sanitized = sanitized.replace(r, '[REDACTED PHONE NUMBER - PRIVACY POLICY]');
-    }
-  }
-  for (const r of EMAIL_REGEXES) {
-    r.lastIndex = 0;
-    if (r.test(sanitized)) {
-      if (!detectedTypes.includes('EMAIL')) detectedTypes.push('EMAIL');
-      r.lastIndex = 0;
-      sanitized = sanitized.replace(r, '[REDACTED EMAIL ADDRESS - PRIVACY POLICY]');
-    }
-  }
+
+  // 1. Handles / URLs FIRST
   for (const r of HANDLE_REGEXES) {
     r.lastIndex = 0;
     if (r.test(sanitized)) {
@@ -79,9 +69,35 @@ function scanMessage(content) {
       sanitized = sanitized.replace(r, '[REDACTED EXTERNAL LINK/HANDLE]');
     }
   }
+
+  // 2. Emails SECOND
+  for (const r of EMAIL_REGEXES) {
+    r.lastIndex = 0;
+    if (r.test(sanitized)) {
+      if (!detectedTypes.includes('EMAIL')) detectedTypes.push('EMAIL');
+      r.lastIndex = 0;
+      sanitized = sanitized.replace(r, '[REDACTED EMAIL ADDRESS - PRIVACY POLICY]');
+    }
+  }
+
+  // 3. Phones THIRD
+  for (const r of PHONE_REGEXES) {
+    r.lastIndex = 0;
+    if (r.test(sanitized)) {
+      if (!detectedTypes.includes('PHONE')) detectedTypes.push('PHONE');
+      r.lastIndex = 0;
+      sanitized = sanitized.replace(r, '[REDACTED PHONE NUMBER - PRIVACY POLICY]');
+    }
+  }
+
+  // Deduplicate consecutive identical redactions
+  sanitized = sanitized.replace(/(?:\[REDACTED EXTERNAL LINK\/HANDLE\][\s,]*)+/g, '[REDACTED EXTERNAL LINK/HANDLE] ');
+  sanitized = sanitized.replace(/(?:\[REDACTED PHONE NUMBER - PRIVACY POLICY\][\s,]*)+/g, '[REDACTED PHONE NUMBER - PRIVACY POLICY] ');
+  sanitized = sanitized.replace(/(?:\[REDACTED EMAIL ADDRESS - PRIVACY POLICY\][\s,]*)+/g, '[REDACTED EMAIL ADDRESS - PRIVACY POLICY] ');
+
   return {
     isViolating: detectedTypes.length > 0,
-    sanitized,
+    sanitized: sanitized.trim(),
     detectedTypes,
   };
 }
@@ -135,6 +151,8 @@ app.prepare().then(() => {
     socket.on('send_message', (payload) => {
       const { conversationId, senderId, senderRole, senderName, content, attachment } = payload;
       if (!conversationId || !senderId) return;
+
+      socket.join(`conv_${conversationId}`);
 
       const scan = scanMessage(content || '');
       const messageId = `msg_${Date.now()}`;

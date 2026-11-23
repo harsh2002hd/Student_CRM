@@ -120,6 +120,11 @@ export default function MobileFirstChatInbox() {
   const [templatesList] = useState<MessageTemplate[]>(INITIAL_TEMPLATES);
   const [tagsList, setTagsList] = useState<LeadTag[]>(INITIAL_LEAD_TAGS);
   const [newTagInput, setNewTagInput] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -127,13 +132,17 @@ export default function MobileFirstChatInbox() {
 
   // 1. Fetch Conversations from API
   const loadConversations = async () => {
+    if (!currentUser?.id) return;
     try {
-      const res = await fetch(`/api/chat/conversations?userId=${currentUser.id}&role=${currentRole}`);
+      const res = await fetch(`/api/chat/conversations?userId=${currentUser.id}&role=${currentRole || 'STUDENT'}`);
       const data = await res.json();
       if (data.success && data.conversations) {
         setConversations(data.conversations);
-        if (!activeConversationId && data.conversations.length > 0) {
-          setActiveConversationId(data.conversations[0].id);
+        if (data.conversations.length > 0) {
+          const exists = data.conversations.some((c: any) => c.id === activeConversationId);
+          if (!exists || !activeConversationId) {
+            setActiveConversationId(data.conversations[0].id);
+          }
         }
       }
     } catch (err) {
@@ -252,7 +261,7 @@ export default function MobileFirstChatInbox() {
         }
         return prev.map((c) => {
           if (c.id === data.message.conversationId) {
-            const isMe = data.message.senderId === currentUser.id;
+            const isMe = data.message.senderId === currentUser?.id;
             return {
               ...c,
               lastMessage: data.message.content || '📎 Attachment',
@@ -312,7 +321,7 @@ export default function MobileFirstChatInbox() {
       socket.off('conversation_updated', handleConversationUpdated);
       socket.off('new_lead_registered', handleNewLeadRegistered);
     };
-  }, [socket, activeConversationId, currentUser.id, currentRole]);
+  }, [socket, activeConversationId, currentUser?.id, currentRole]);
 
   // 4. Typing Signal
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -329,14 +338,22 @@ export default function MobileFirstChatInbox() {
   // 5. Send Message Dispatch
   const handleSendMessage = () => {
     if (!inputText.trim() || !activeConversationId) return;
-    const textToSend = inputText;
+    const textToSend = inputText.trim();
     setInputText('');
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     sendTypingSignal(activeConversationId, false);
 
+    const payload = {
+      conversationId: activeConversationId,
+      senderId: currentUser.id,
+      senderRole: currentRole,
+      senderName: currentUser.name,
+      content: textToSend,
+    };
+
     sendRealtimeMessage(
-      activeConversationId,
+      payload,
       textToSend,
       (scan) => {
         if (scan?.isViolating) {
@@ -363,17 +380,22 @@ export default function MobileFirstChatInbox() {
       });
       const data = await res.json();
       if (data.success && data.file) {
-        sendRealtimeMessage(
-          activeConversationId,
-          `📎 Shared file: ${data.file.name}`,
-          undefined,
-          {
+        const payload = {
+          conversationId: activeConversationId,
+          senderId: currentUser.id,
+          senderRole: currentRole,
+          senderName: currentUser.name,
+          content: `📎 Shared file: ${data.file.name}`,
+          attachment: {
             name: data.file.name,
             size: data.file.size,
             type: data.file.type,
             url: data.file.url,
-          }
-        );
+          },
+        };
+        sendRealtimeMessage(payload);
+      } else {
+        alert(data.error || 'Upload failed');
       }
     } catch (err) {
       console.error('File upload error:', err);
@@ -410,14 +432,14 @@ export default function MobileFirstChatInbox() {
       }
 
       if (queueTab === 'MY') {
-        return c.expertId === currentUser.id || c.assignedToId === currentUser.id;
+        return c.expertId === currentUser?.id || c.assignedToId === currentUser?.id;
       }
       if (queueTab === 'UNASSIGNED') {
         return !c.assignedToId || c.assigneeName === 'Unassigned' || !c.expertId;
       }
       return true;
     });
-  }, [conversations, searchQuery, unreadOnly, queueTab, currentRole, currentUser.id]);
+  }, [conversations, searchQuery, unreadOnly, queueTab, currentRole, currentUser?.id]);
 
   // Total Unread Count for Inbox badge
   const totalUnreadCount = useMemo(() => {
@@ -492,7 +514,7 @@ export default function MobileFirstChatInbox() {
     if (!typingUsers || !activeConversationId) return [];
     if (Array.isArray(typingUsers)) {
       return (typingUsers as any[])
-        .filter((t) => t.conversationId === activeConversationId && t.userId !== currentUser.id)
+        .filter((t) => t.conversationId === activeConversationId && t.userId !== currentUser?.id)
         .map((t) => t.userName || 'Counterparty');
     }
     if (typeof typingUsers === 'object') {
@@ -503,6 +525,19 @@ export default function MobileFirstChatInbox() {
   }, [typingUsers, activeConversationId, currentUser]);
 
   const isOtherUserTyping = activeTypingList.length > 0;
+
+  if (!mounted) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-4rem)] max-w-7xl mx-auto w-full bg-slate-50 items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center animate-pulse">
+            <MessageSquare className="h-5 w-5" />
+          </div>
+          <p className="text-xs font-semibold text-slate-500">Loading M1 Workspace Chat...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] max-w-7xl mx-auto w-full bg-slate-50 font-sans antialiased text-slate-800 overflow-hidden sm:p-3">
@@ -751,7 +786,7 @@ export default function MobileFirstChatInbox() {
             ) : (
               filteredConversations.map((conv) => {
                 const isActive = conv.id === activeConversationId;
-                const contactName = conv.contactName || (conv.studentId === currentUser.id ? 'M1 Support' : 'Student Lead');
+                const contactName = conv.contactName || (conv.studentId === currentUser?.id ? 'M1 Support' : 'Student Lead');
                 const initials = contactName
                   .split(' ')
                   .map((w) => w[0])
@@ -976,7 +1011,7 @@ export default function MobileFirstChatInbox() {
               </div>
             ) : (
               messages.map((msg) => {
-                const isMe = msg.senderId === currentUser.id;
+                const isMe = msg.senderId === currentUser?.id;
 
                 return (
                   <div

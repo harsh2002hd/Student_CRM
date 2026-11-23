@@ -89,7 +89,7 @@ export default function StudentDashboard() {
               </span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 mt-1">
-              Welcome back, {currentUser.name.split(' ')[0]} 👋
+              Welcome back, {(currentUser?.name || 'Student').split(' ')[0]} 👋
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
               Collaborate safely in real-time with verified academic mentors worldwide.
