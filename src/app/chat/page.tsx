@@ -489,6 +489,35 @@ export default function MobileFirstChatInbox() {
     }
   };
 
+  // Mobile-friendly attachment download handler (handles both URL and base64 Data URLs)
+  const handleDownloadFile = (e: React.MouseEvent, url: string, filename: string) => {
+    if (url.startsWith('data:')) {
+      e.preventDefault();
+      try {
+        const parts = url.split(',');
+        const mimeMatch = parts[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+        const byteCharacters = atob(parts[1]);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: mime });
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      } catch (err) {
+        console.error('Data URL download error:', err);
+      }
+    }
+  };
+
   // 7. Filter & Search Logic for Conversations
   const filteredConversations = useMemo(() => {
     return conversations.filter((c) => {
@@ -1142,9 +1171,8 @@ export default function MobileFirstChatInbox() {
                                 <a
                                   href={msg.attachment.url}
                                   download={msg.attachment.name}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="flex items-center gap-1 bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded text-[10px] font-bold transition-colors"
+                                  onClick={(e) => handleDownloadFile(e, msg.attachment!.url, msg.attachment!.name)}
+                                  className="flex items-center gap-1 bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded text-[10px] font-bold transition-colors cursor-pointer"
                                   title="Download Image"
                                 >
                                   <Download className="h-3 w-3" />
@@ -1172,7 +1200,8 @@ export default function MobileFirstChatInbox() {
                               <a
                                 href={msg.attachment.url}
                                 download={msg.attachment.name}
-                                className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                                onClick={(e) => handleDownloadFile(e, msg.attachment!.url, msg.attachment!.name)}
+                                className={`p-1.5 rounded-lg transition-colors shrink-0 cursor-pointer ${
                                   isMe ? 'bg-emerald-800 hover:bg-emerald-900 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
                                 }`}
                                 title="Download file"
